@@ -1,4 +1,4 @@
-const DB_HOST = 'localhost';
+const DB_HOST = '172.17.13.6';
 const DB_PORT = 5432;
 const DB_USER = 'postgres';
 const DB_PASSWORD = '07071907';
@@ -13,5 +13,5 @@ module.exports = {
   DB_PASSWORD,
   DB_NAME,
   DB_SCHEMA,
-  API_PORT
-}
+  API_PORT,
+};
