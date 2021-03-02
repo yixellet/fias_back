@@ -1,3 +1,4 @@
+/* eslint-disable no-multi-str */
 const pgp = require('pg-promise')();
 const { ParameterizedQuery } = require('pg-promise');
 const {
@@ -9,6 +10,22 @@ const {
 } = require('../config');
 
 const db = pgp(`postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}`);
+
+function getLevels(req, res) {
+  const query = new ParameterizedQuery(
+    {
+      text: 'SELECT * FROM gar.object_levels',
+    },
+  );
+
+  db.any(query)
+    .then((data) => {
+      res.send({ data });
+    })
+    .catch((error) => {
+      res.send({ error });
+    });
+}
 
 function getObjectsByLevel(req, res) {
   const query = new ParameterizedQuery(
@@ -27,16 +44,24 @@ function getObjectsByLevel(req, res) {
     });
 }
 
-function getLevels(req, res) {
-  const query = new ParameterizedQuery(
+function getSelsovets(req, res) {
+  const dataQuery = new ParameterizedQuery(
     {
-      text: 'SELECT * FROM gar.object_levels',
+      text: 'SELECT * FROM gar.selsovets ORDER BY mo_name',
+    },
+  );
+  const munDistrFilterQuery = new ParameterizedQuery(
+    {
+      text: 'SELECT * FROM gar.mun_distr ORDER BY mun_name',
     },
   );
 
-  db.any(query)
+  db.any(dataQuery)
     .then((data) => {
-      res.send({ data });
+      db.any(munDistrFilterQuery)
+        .then((filter) => {
+          res.send({ data: data, filter: {name: 'Муниципальный район', data: filter} });
+        })
     })
     .catch((error) => {
       res.send({ error });
@@ -46,18 +71,40 @@ function getLevels(req, res) {
 function getSteads(req, res) {
   const query = new ParameterizedQuery(
     {
-      text: 'SELECT * FROM gar.steads JOIN gar.addr_obj ON steads.objectid = addr_obj.objectid',
+      text: 'SELECT steads.objectid, steads.objectguid, addr_obj.typename || \' \' || \
+      addr_obj.name AS streetname, steads.number FROM gar.adm_hierarchy JOIN gar.addr_obj \
+      ON adm_hierarchy.parentobjid = addr_obj.objectid JOIN gar.steads ON \
+      adm_hierarchy.objectid = steads.objectid ORDER BY streetname, number LIMIT 1000',
     },
   );
 
   db.any(query)
     .then((data) => {
       res.send({ data });
-      console.log(data);
     })
     .catch((error) => {
       res.send({ error });
     });
 }
 
-module.exports = { getObjectsByLevel, getLevels, getSteads };
+function getHouses(req, res) {
+  const query = new ParameterizedQuery(
+    {
+      text: 'SELECT houses.objectid, houses.objectguid, addr_obj.typename || \' \' || \
+      addr_obj.name AS streetname, houses.housenum, houses.addnum1, houses.addnum2 FROM gar.adm_hierarchy JOIN gar.addr_obj \
+      ON adm_hierarchy.parentobjid = addr_obj.objectid JOIN gar.houses ON \
+      adm_hierarchy.objectid = houses.objectid ORDER BY streetname, housenum LIMIT 1000',
+    },
+  );
+
+  db.any(query)
+    .then((data) => {
+      res.send({ data });
+    })
+    .catch((error) => {
+      console.log(error)
+      res.send({ error });
+    });
+}
+
+module.exports = { getObjectsByLevel, getSelsovets, getLevels, getSteads, getHouses };
