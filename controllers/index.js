@@ -37,7 +37,7 @@ function getObjectsByLevel(req, res) {
 
   db.any(query)
     .then((data) => {
-      res.send({ data });
+      res.send({ data: data, filter: null, columns: Object.keys(data[0]) });
     })
     .catch((error) => {
       res.send({ error });
@@ -60,7 +60,7 @@ function getSelsovets(req, res) {
     .then((data) => {
       db.any(munDistrFilterQuery)
         .then((filter) => {
-          res.send({ data: data, filter: {name: 'Муниципальный район', data: filter} });
+          res.send({ data: data, filter: {name: 'Муниципальный район', data: filter}, columns: Object.keys(data[0]) });
         })
     })
     .catch((error) => {
