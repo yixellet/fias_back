@@ -1,5 +1,6 @@
 /* eslint-disable no-multi-str */
 const pgp = require('pg-promise')();
+const { default: contentSecurityPolicy } = require('helmet/dist/middlewares/content-security-policy');
 const { ParameterizedQuery } = require('pg-promise');
 const {
   DB_HOST,
@@ -13,17 +14,13 @@ const {
 const db = pgp(`postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}`);
 
 function liveSearch(req, res) {
-  const query = new ParameterizedQuery(
-    {
-      text: `SELECT ao.objectid, ao.name, ao.typename
-             FROM gar.addr_obj ao 
-             WHERE LOWER(ao.name) LIKE '%${req.query.string}%' 
-              AND ao.isactual = 1 AND ao.isactive = 1
-             LIMIT 10`
-    },
-  );
-
-  db.any(query)
+  db.any(`SELECT o.objectid,
+            o.name,
+            o.typename
+          FROM ${DB_SCHEMA}.addr_obj o
+          WHERE LOWER(o.name) LIKE LOWER('%${req.query.string}%')
+            AND o.isactual = 1 AND o.isactive = 1
+          LIMIT 10`)
     .then((data) => {
       res.send({ data });
     })
@@ -35,7 +32,7 @@ function liveSearch(req, res) {
 function getLevels(req, res) {
   const query = new ParameterizedQuery(
     {
-      text: 'SELECT * FROM gar.object_levels',
+      text: `SELECT * FROM ${DB_SCHEMA}.object_levels`,
     },
   );
 
@@ -48,73 +45,24 @@ function getLevels(req, res) {
     });
 }
 
-function getAdmDistricts(req, res) {
-  const query = new ParameterizedQuery(
+function getChildren(req, res) {
+  db.any('SELECT * FROM ${schema:name}.${table:name}(${objectid})',
     {
-      text: 'SELECT * FROM gar.adm_distr'
-    },
-  );
-
-  db.any(query)
-    .then((data) => {
-      res.send({ data });
+      objectid: req.query.objectid,
+      schema: DB_SCHEMA,
+      table: req.query.mode === 'adm_div' ? 'getchildren_adm' : 'getchildren_mun'
     })
-    .catch((error) => {
-      res.send({ error });
-    });
-}
-
-function getAdmDistrictsDetails(req, res) {
-  const query = new ParameterizedQuery(
-    {
-      text: `SELECT * FROM gar."getAdmDistrDetails"($1)`,
-      values: [req.query.code]
-    },
-  );
-
-  db.any(query)
     .then((data) => {
-      res.send({ data });
-    })
-    .catch((error) => {
-      res.send({ error });
-    });
-}
-
-function getMunDistricts(req, res) {
-  const query = new ParameterizedQuery(
-    {
-      text: 'SELECT * FROM gar.m_distr'
-    },
-  );
-
-  db.any(query)
-    .then((data) => {
-      res.send({ data });
-    })
-    .catch((error) => {
-      res.send({ error });
-    });
-}
-
-function getMunStructures(req, res) {
-  const query = new ParameterizedQuery(
-    {
-      text: `SELECT * FROM gar.m_struct`
-    },
-  );
-  const filter1 = new ParameterizedQuery({text: 'SELECT * FROM gar.m_distr'})
-  db.any(query)
-    .then((data) => {
-      db.any(filter1)
-        .then((filter) => {
+      db.any(req.query.mode === 'adm_div' ? 'SELECT * FROM ${schema:name}.genealogy_adm(${objectid});' : 'SELECT * FROM ${schema:name}.genealogy_mun(${objectid});',
+        {
+          objectid: req.query.objectid,
+          schema: DB_SCHEMA
+        })
+        .then((gen) => {
           res.send({
-            data: data,
-            filters: [{
-              name: 'Муниципальный район',
-              fieldname: 'mundistr',
-              options: filter}]
-            });
+            genealogy: gen,
+            children: data
+          })
         })
     })
     .catch((error) => {
@@ -122,96 +70,28 @@ function getMunStructures(req, res) {
     });
 }
 
-function getCities(req, res) {
-  const query = new ParameterizedQuery(
-    {
-      text: 'SELECT * FROM gar.cities'
-    },
-  );
-
-  db.any(query)
+function getHouseChildren(req, res) {
+  db.any('SELECT * FROM ${schema:name}.gethousechildren(${objectid});',
+  {
+    objectid: req.query.objectid,
+    schema: DB_SCHEMA
+  })
     .then((data) => {
-      res.send({ data });
+      res.send({children: data})
     })
     .catch((error) => {
       res.send({ error });
     });
 }
 
-function getSettles(req, res) {
-  const query = new ParameterizedQuery(
-    {
-      text: 'SELECT * FROM gar.settles'
-    },
-  );
-
-  db.any(query)
+function getRooms(req, res) {
+  db.any('SELECT * FROM ${schema:name}.getrooms(${objectid});',
+  {
+    objectid: req.query.objectid,
+    schema: DB_SCHEMA
+  })
     .then((data) => {
-      res.send({ data });
-    })
-    .catch((error) => {
-      res.send({ error });
-    });
-}
-
-function getTerritories(req, res) {
-  const query = new ParameterizedQuery(
-    {
-      text: 'SELECT * FROM gar.terr'
-    },
-  );
-
-  db.any(query)
-    .then((data) => {
-      res.send({ data });
-    })
-    .catch((error) => {
-      res.send({ error });
-    });
-}
-
-function getStreets(req, res) {
-  const query = new ParameterizedQuery(
-    {
-      text: 'SELECT * FROM gar.streets'
-    },
-  );
-
-  db.any(query)
-    .then((data) => {
-      res.send({ data });
-    })
-    .catch((error) => {
-      res.send({ error });
-    });
-}
-
-function getSteads(req, res) {
-  const query = new ParameterizedQuery(
-    {
-      text: 'SELECT * FROM gar.steads_mv'
-    },
-  );
-
-  db.any(query)
-    .then((data) => {
-      res.send({ data });
-    })
-    .catch((error) => {
-      res.send({ error });
-    });
-}
-
-function getHouses(req, res) {
-  const query = new ParameterizedQuery(
-    {
-      text: 'SELECT * FROM gar.houses_mv'
-    },
-  );
-
-  db.any(query)
-    .then((data) => {
-      res.send({ data });
+      res.send({children: data})
     })
     .catch((error) => {
       res.send({ error });
@@ -220,15 +100,8 @@ function getHouses(req, res) {
 
 module.exports = {
   liveSearch,
-  getAdmDistricts,
-  getAdmDistrictsDetails,
-  getMunDistricts,
-  getMunStructures,
-  getCities,
   getLevels,
-  getSettles,
-  getTerritories,
-  getStreets,
-  getSteads,
-  getHouses
+  getChildren,
+  getHouseChildren,
+  getRooms
 };
