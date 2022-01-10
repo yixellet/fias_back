@@ -4,7 +4,7 @@ const DB_USER = 'postgres';
 const DB_PASSWORD = '07071907';
 const DB_NAME = 'geodata';
 const DB_SCHEMA = 'gar';
-const API_PORT = 4000;
+const API_PORT = 5000;
 
 module.exports = {
   DB_HOST,
