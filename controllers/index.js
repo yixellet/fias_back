@@ -32,7 +32,8 @@ function liveSearch(req, res) {
 function getLevels(req, res) {
   const query = new ParameterizedQuery(
     {
-      text: `SELECT * FROM ${DB_SCHEMA}.object_levels`,
+      text: `SELECT ol.level, ol.name FROM ${DB_SCHEMA}.object_levels ol
+             WHERE ol.isactive = true ORDER BY ol.level`,
     },
   );
 
