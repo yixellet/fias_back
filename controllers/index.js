@@ -54,17 +54,9 @@ function getChildren(req, res) {
       table: req.query.mode === 'adm_div' ? 'getchildren_adm' : 'getchildren_mun'
     })
     .then((data) => {
-      db.any(req.query.mode === 'adm_div' ? 'SELECT * FROM ${schema:name}.genealogy_adm(${objectid});' : 'SELECT * FROM ${schema:name}.genealogy_mun(${objectid});',
-        {
-          objectid: req.query.objectid,
-          schema: DB_SCHEMA
-        })
-        .then((gen) => {
-          res.send({
-            genealogy: gen,
-            children: data
-          })
-        })
+      res.send({
+        children: data
+      })
     })
     .catch((error) => {
       res.send({ error });
@@ -99,10 +91,25 @@ function getRooms(req, res) {
     });
 }
 
+function getParams(req, res) {
+  db.any('SELECT * FROM ${schema:name}.getparams(${objectid});',
+  {
+    objectid: req.query.objectid,
+    schema: DB_SCHEMA
+  })
+    .then((data) => {
+      res.send({params: data})
+    })
+    .catch((error) => {
+      res.send({ error });
+    });
+}
+
 module.exports = {
   liveSearch,
   getLevels,
   getChildren,
   getHouseChildren,
-  getRooms
+  getRooms,
+  getParams
 };
