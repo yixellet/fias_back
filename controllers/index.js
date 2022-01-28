@@ -1,6 +1,5 @@
 /* eslint-disable no-multi-str */
 const pgp = require('pg-promise')();
-const { default: contentSecurityPolicy } = require('helmet/dist/middlewares/content-security-policy');
 const { ParameterizedQuery } = require('pg-promise');
 const {
   DB_HOST,
