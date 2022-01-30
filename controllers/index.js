@@ -7,7 +7,8 @@ const {
   DB_USER,
   DB_PASSWORD,
   DB_NAME,
-  DB_SCHEMA
+  DB_SCHEMA,
+  DB_GEOM_SCHEMA
 } = require('../config');
 
 const db = pgp(`postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}`);
@@ -104,11 +105,74 @@ function getParams(req, res) {
     });
 }
 
+function getGeometry(req, res) {
+  let tableName
+  let columnName
+  switch (req.query.level) {
+    case '1':
+      tableName = 'adm_boundaries_poly'
+      columnName = 'objectid_adm'
+      break;
+    case '2':
+      tableName = 'adm_boundaries_poly'
+      columnName = 'objectid_adm'
+      break;
+    case '3':
+      tableName = 'adm_boundaries_poly'
+      columnName = 'objectid_mun'
+      break;
+    case '4':
+      tableName = 'adm_boundaries_poly'
+      columnName = 'objectid_mun'
+      break;
+    case '5':
+      tableName = 'settlements'
+      columnName = 'objectid_adm'
+      break;
+    case '6':
+      tableName = 'settlements'
+      columnName = 'objectid_adm'
+      break;
+    case '7':
+      tableName = 'territories'
+      columnName = 'objectid_adm'
+      break;
+    case '8':
+      tableName = 'streets'
+      columnName = 'objectid_adm'
+      break;
+    case '9':
+      tableName = 'landuse'
+      columnName = 'objectid_adm'
+      break;
+    case '10':
+      tableName = 'buildings'
+      columnName = 'objectid_adm'
+      break;
+  }
+  db.any('SELECT ST_AsGeoJSON(ab.*) FROM ${schema:name}.${table:name} ab WHERE ab.${column:name} = ${objectid}',
+    {
+      objectid: req.query.objectid,
+      schema: DB_GEOM_SCHEMA,
+      table: tableName,
+      column: columnName,
+    })
+    .then((data) => {
+      res.send({
+        data: data
+      })
+    })
+    .catch((error) => {
+      res.send({ error });
+    });
+}
+
 module.exports = {
   liveSearch,
   getLevels,
   getChildren,
   getHouseChildren,
   getRooms,
-  getParams
+  getParams,
+  getGeometry
 };

@@ -4,6 +4,7 @@ const DB_USER = 'postgres';
 const DB_PASSWORD = '07071907';
 const DB_NAME = 'geodata';
 const DB_SCHEMA = 'gar';
+const DB_GEOM_SCHEMA = 'data';
 const API_PORT = 5000;
 
 module.exports = {
@@ -13,5 +14,6 @@ module.exports = {
   DB_PASSWORD,
   DB_NAME,
   DB_SCHEMA,
+  DB_GEOM_SCHEMA,
   API_PORT,
 };

@@ -5,7 +5,8 @@ const {
     getChildren,
     getHouseChildren,
     getRooms,
-    getParams
+    getParams,
+    getGeometry
 } = require('../controllers');
 
 router.get('/livesearch', liveSearch);
@@ -14,5 +15,6 @@ router.get('/children', getChildren);
 router.get('/housechildren', getHouseChildren);
 router.get('/rooms', getRooms);
 router.get('/params', getParams);
+router.get('/geometry', getGeometry);
 
 module.exports = router;
