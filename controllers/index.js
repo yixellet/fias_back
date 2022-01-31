@@ -150,7 +150,12 @@ function getGeometry(req, res) {
       columnName = 'objectid_adm'
       break;
   }
-  db.any('SELECT ST_AsGeoJSON(ab.*) FROM ${schema:name}.${table:name} ab WHERE ab.${column:name} = ${objectid}',
+  db.any('SELECT ab.name, \
+            ab.type, \
+            ST_AsGeoJSON(ab.geom) AS geom, \
+            ST_AsGeoJSON(ST_Centroid(ab.geom)) AS centroid \
+          FROM ${schema:name}.${table:name} ab \
+          WHERE ab.${column:name} = ${objectid}',
     {
       objectid: req.query.objectid,
       schema: DB_GEOM_SCHEMA,
