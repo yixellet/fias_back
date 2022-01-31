@@ -153,9 +153,12 @@ function getGeometry(req, res) {
   db.any('SELECT ab.name, \
             ab.type, \
             ST_AsGeoJSON(ab.geom) AS geom, \
-            ST_AsGeoJSON(ST_Centroid(ab.geom)) AS centroid \
+            ST_X(ST_Centroid(ab.geom)) AS centroid_x, \
+            ST_y(ST_Centroid(ab.geom)) AS centroid_y, \
+            ST_Extent(ab.geom) AS extent \
           FROM ${schema:name}.${table:name} ab \
-          WHERE ab.${column:name} = ${objectid}',
+          WHERE ab.${column:name} = ${objectid} \
+          GROUP BY name, type, geom',
     {
       objectid: req.query.objectid,
       schema: DB_GEOM_SCHEMA,
