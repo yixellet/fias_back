@@ -16,13 +16,40 @@ const db = pgp(`postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_
 function liveSearch(req, res) {
   db.any(`SELECT o.objectid,
             o.name,
-            o.typename
+            o.typename,
+            o.level
           FROM ${DB_SCHEMA}.addr_obj o
           WHERE LOWER(o.name) LIKE LOWER('%${req.query.string}%')
             AND o.isactual = 1 AND o.isactive = 1
           LIMIT 10`)
     .then((data) => {
       res.send({ data });
+    })
+    .catch((error) => {
+      res.send({ error });
+    });
+}
+
+function search(req, res) {
+  db.any(`SELECT o.objectid,
+            o.name,
+            o.typename,
+            o.level
+          FROM ${DB_SCHEMA}.addr_obj o
+          WHERE LOWER(o.name) LIKE LOWER('%${req.query.string}%')
+            AND o.isactual = 1 AND o.isactive = 1`)
+    .then((data) => {
+      const newData = []
+      data.forEach((object) => {
+        const newObject = object
+        db.any(`SELECT * FROM ${DB_SCHEMA}.genealogy_mun(${object.objectid})`)
+          .then((gen) => {
+            newObject.gen = gen
+          })
+        console.log(newObject)
+        newData.push(newObject)
+      })
+      res.send({ newData });
     })
     .catch((error) => {
       res.send({ error });
@@ -110,19 +137,19 @@ function getGeometry(req, res) {
   let columnName
   switch (req.query.level) {
     case '1':
-      tableName = 'adm_boundaries_poly'
+      tableName = 'borders_Astrakhan'
       columnName = 'objectid_adm'
       break;
     case '2':
-      tableName = 'adm_boundaries_poly'
+      tableName = 'borders_Astrakhan'
       columnName = 'objectid_adm'
       break;
     case '3':
-      tableName = 'adm_boundaries_poly'
+      tableName = 'borders_Astrakhan'
       columnName = 'objectid_mun'
       break;
     case '4':
-      tableName = 'adm_boundaries_poly'
+      tableName = 'borders_Astrakhan'
       columnName = 'objectid_mun'
       break;
     case '5':
@@ -150,15 +177,11 @@ function getGeometry(req, res) {
       columnName = 'objectid_adm'
       break;
   }
-  db.any('SELECT ab.name, \
-            ab.type, \
-            ST_AsGeoJSON(ab.geom) AS geom, \
-            ST_X(ST_Centroid(ab.geom)) AS centroid_x, \
-            ST_y(ST_Centroid(ab.geom)) AS centroid_y, \
+  db.any('SELECT ST_AsGeoJSON(ab.geom) AS geom, \
             ST_Extent(ab.geom) AS extent \
           FROM ${schema:name}.${table:name} ab \
           WHERE ab.${column:name} = ${objectid} \
-          GROUP BY name, type, geom',
+          GROUP BY geom',
     {
       objectid: req.query.objectid,
       schema: DB_GEOM_SCHEMA,
@@ -175,12 +198,28 @@ function getGeometry(req, res) {
     });
 }
 
+function getGenealogy(req, res) {
+  db.any('SELECT * FROM ${schema:name}.genealogy_mun(${objectid});',
+  {
+    objectid: req.query.objectid,
+    schema: DB_SCHEMA
+  })
+    .then((data) => {
+      res.send(data)
+    })
+    .catch((error) => {
+      res.send({ error });
+    });
+}
+
 module.exports = {
   liveSearch,
+  search,
   getLevels,
   getChildren,
   getHouseChildren,
   getRooms,
   getParams,
-  getGeometry
+  getGeometry,
+  getGenealogy
 };
