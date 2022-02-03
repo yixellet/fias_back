@@ -1,10 +1,10 @@
-const DB_HOST = 'localhost';
+const DB_HOST = '172.17.13.6';
 const DB_PORT = 5432;
 const DB_USER = 'postgres';
 const DB_PASSWORD = '07071907';
 const DB_NAME = 'geodata';
 const DB_SCHEMA = 'gar';
-const DB_GEOM_SCHEMA = 'data';
+const DB_GEOM_SCHEMA = 'address';
 const API_PORT = 5000;
 
 module.exports = {

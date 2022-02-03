@@ -110,28 +110,28 @@ function getGeometry(req, res) {
   let columnName
   switch (req.query.level) {
     case '1':
-      tableName = 'adm_boundaries_poly'
-      columnName = 'objectid_adm'
+      tableName = 'borders_Astrakhan'
+      columnName = 'gar_id_adm'
       break;
     case '2':
-      tableName = 'adm_boundaries_poly'
-      columnName = 'objectid_adm'
+      tableName = 'borders_Astrakhan'
+      columnName = 'gar_id_adm'
       break;
     case '3':
-      tableName = 'adm_boundaries_poly'
-      columnName = 'objectid_mun'
+      tableName = 'borders_Astrakhan'
+      columnName = 'gar_id_mun'
       break;
     case '4':
-      tableName = 'adm_boundaries_poly'
-      columnName = 'objectid_mun'
+      tableName = 'borders_Astrakhan'
+      columnName = 'gar_id_mun'
       break;
     case '5':
       tableName = 'settlements'
-      columnName = 'objectid_adm'
+      columnName = 'gar_id_adm'
       break;
     case '6':
       tableName = 'settlements'
-      columnName = 'objectid_adm'
+      columnName = 'gar_id_adm'
       break;
     case '7':
       tableName = 'territories'
@@ -150,15 +150,16 @@ function getGeometry(req, res) {
       columnName = 'objectid_adm'
       break;
   }
+  console.log(`SELECT ab.name, ST_AsGeoJSON(ab.geom) AS geom, ST_X(ST_Centroid(ab.geom)) AS centroid_x, ST_y(ST_Centroid(ab.geom)) AS centroid_y, ST_Extent(ab.geom) AS extent \
+            FROM ${DB_GEOM_SCHEMA}.${tableName} ab WHERE ab.${columnName} = ${req.query.objectid} GROUP BY name, geom`)
   db.any('SELECT ab.name, \
-            ab.type, \
             ST_AsGeoJSON(ab.geom) AS geom, \
             ST_X(ST_Centroid(ab.geom)) AS centroid_x, \
             ST_y(ST_Centroid(ab.geom)) AS centroid_y, \
             ST_Extent(ab.geom) AS extent \
           FROM ${schema:name}.${table:name} ab \
           WHERE ab.${column:name} = ${objectid} \
-          GROUP BY name, type, geom',
+          GROUP BY name, geom',
     {
       objectid: req.query.objectid,
       schema: DB_GEOM_SCHEMA,

@@ -2,11 +2,12 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const routes = require('./routes');
+const { requestLogger, errorLogger } = require('./middlewares/logger');
 const { API_PORT } = require('./config');
 
 const app = express();
 app.use('*', cors({
-  origin: 'http://localhost:3000',
+  origin: '*',
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   preflightContinue: false,
   optionsSuccessStatus: 204,
@@ -19,5 +20,7 @@ app.use('*', cors({
   ],
   credentials: true,
 }));
+app.use(requestLogger);
 app.use(routes);
+app.use(errorLogger);
 app.listen(API_PORT);
