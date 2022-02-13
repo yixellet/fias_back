@@ -14,14 +14,16 @@ const {
 const db = pgp(`postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}`);
 
 function liveSearch(req, res) {
-  db.any(`SELECT o.objectid,
-            o.name,
-            o.typename,
-            o.level
-          FROM ${DB_SCHEMA}.addr_obj o
-          WHERE LOWER(o.name) LIKE LOWER('%${req.query.string}%')
-            AND o.isactual = 1 AND o.isactive = 1
-          LIMIT 10`)
+  db.any(`SELECT o.objectid, 
+            o.name, 
+            o.typename, 
+            o.level 
+          FROM ${DB_SCHEMA}.addr_obj o 
+          WHERE LOWER(o.name) LIKE LOWER('%${req.query.string}%') 
+            AND o.isactual = 1 AND o.isactive = 1 AND o.level IN (${req.query.mode === 'adm_div' ? 
+            `'1','2','5','6','7','8','9','10','11','12','13','14','15','16','17'` : 
+            `'1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17'`}) 
+          LIMIT 10;`)
     .then((data) => {
       res.send({ data });
     })
@@ -31,6 +33,9 @@ function liveSearch(req, res) {
 }
 
 function search(req, res) {
+  function a(data, variable) {
+    variable = data
+  }
   db.any(`SELECT o.objectid,
             o.name,
             o.typename,
@@ -42,11 +47,13 @@ function search(req, res) {
       const newData = []
       data.forEach((object) => {
         const newObject = object
+        let gene
         db.any(`SELECT * FROM ${DB_SCHEMA}.genealogy_mun(${object.objectid})`)
           .then((gen) => {
-            newObject.gen = gen
+            a(gen, gene)
           })
-        console.log(newObject)
+        newObject.gen = gene
+        console.log(gene)
         newData.push(newObject)
       })
       res.send({ newData });
@@ -67,6 +74,22 @@ function getLevels(req, res) {
   db.any(query)
     .then((data) => {
       res.send({ data });
+    })
+    .catch((error) => {
+      res.send({ error });
+    });
+}
+
+function getObject(req, res) {
+  db.one('SELECT objectid, name, typename, level \
+          FROM ${schema:name}.addr_obj \
+          WHERE objectid=${objectid} AND isactual=1 AND isactive=1',
+  {
+    objectid: req.query.objectid,
+    schema: DB_SCHEMA
+  })
+    .then((data) => {
+      res.send(data)
     })
     .catch((error) => {
       res.send({ error });
@@ -177,11 +200,11 @@ function getGeometry(req, res) {
       columnName = 'objectid_adm'
       break;
   }
-  db.any('SELECT ST_AsGeoJSON(ab.geom) AS geom, \
+  db.one('SELECT ST_AsGeoJSON(ab.geom) AS geom, \
             ST_Extent(ab.geom) AS extent \
           FROM ${schema:name}.${table:name} ab \
           WHERE ab.${column:name} = ${objectid} \
-          GROUP BY geom',
+          GROUP BY geom;',
     {
       objectid: req.query.objectid,
       schema: DB_GEOM_SCHEMA,
@@ -198,11 +221,12 @@ function getGeometry(req, res) {
     });
 }
 
-function getGenealogy(req, res) {
-  db.any('SELECT * FROM ${schema:name}.genealogy_mun(${objectid});',
+function getParents(req, res) {
+  db.any('SELECT * FROM ${schema:name}.${table:name}(${objectid});',
   {
     objectid: req.query.objectid,
-    schema: DB_SCHEMA
+    schema: DB_SCHEMA,
+    table: req.query.mode === 'adm_div' ? 'genealogy_adm' : 'genealogy_mun'
   })
     .then((data) => {
       res.send(data)
@@ -216,10 +240,11 @@ module.exports = {
   liveSearch,
   search,
   getLevels,
+  getObject,
   getChildren,
   getHouseChildren,
   getRooms,
   getParams,
   getGeometry,
-  getGenealogy
+  getParents
 };
