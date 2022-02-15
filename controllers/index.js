@@ -33,30 +33,19 @@ function liveSearch(req, res) {
 }
 
 function search(req, res) {
-  function a(data, variable) {
-    variable = data
-  }
   db.any(`SELECT o.objectid,
             o.name,
             o.typename,
-            o.level
+            o.level,
+            ${DB_SCHEMA}.${req.query.mode === 'adm_div' ? 'parents_adm' : 'parents_mun'}(o.objectid) AS parents,
+            ${DB_SCHEMA}.${req.query.mode === 'adm_div' ? 'row_estimator_adm' : 'row_estimator_mun'}(o.objectid) AS children
           FROM ${DB_SCHEMA}.addr_obj o
           WHERE LOWER(o.name) LIKE LOWER('%${req.query.string}%')
-            AND o.isactual = 1 AND o.isactive = 1`)
+            AND o.isactual = 1 AND o.isactive = 1 AND o.level IN (${req.query.mode === 'adm_div' ? 
+            `'1','2','5','6','7','8','9','10','11','12','13','14','15','16','17'` : 
+            `'1','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17'`});`)
     .then((data) => {
-      const newData = []
-      data.forEach((object) => {
-        const newObject = object
-        let gene
-        db.any(`SELECT * FROM ${DB_SCHEMA}.genealogy_mun(${object.objectid})`)
-          .then((gen) => {
-            a(gen, gene)
-          })
-        newObject.gen = gene
-        console.log(gene)
-        newData.push(newObject)
-      })
-      res.send({ newData });
+      res.send({ data });
     })
     .catch((error) => {
       res.send({ error });
