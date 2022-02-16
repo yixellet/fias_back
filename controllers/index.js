@@ -70,9 +70,7 @@ function getLevels(req, res) {
 }
 
 function getObject(req, res) {
-  db.one('SELECT objectid, name, typename, level \
-          FROM ${schema:name}.addr_obj \
-          WHERE objectid=${objectid} AND isactual=1 AND isactive=1',
+  db.one('SELECT * FROM ${schema:name}.getobject(${objectid});',
   {
     objectid: req.query.objectid,
     schema: DB_SCHEMA
@@ -225,6 +223,21 @@ function getParents(req, res) {
     });
 }
 
+function getHouseParents(req, res) {
+  db.any('SELECT * FROM ${schema:name}.${table:name}(${objectid});',
+  {
+    objectid: req.query.objectid,
+    schema: DB_SCHEMA,
+    table: req.query.mode === 'adm_div' ? 'house_genealogy_adm' : 'house_genealogy_mun'
+  })
+    .then((data) => {
+      res.send(data)
+    })
+    .catch((error) => {
+      res.send({ error });
+    });
+}
+
 module.exports = {
   liveSearch,
   search,
@@ -235,5 +248,6 @@ module.exports = {
   getRooms,
   getParams,
   getGeometry,
-  getParents
+  getParents,
+  getHouseParents
 };
