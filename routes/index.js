@@ -5,12 +5,9 @@ const {
     getLevels,
     getObject,
     getChildren,
-    getHouseChildren,
-    getRooms,
     getParams,
     getGeometry,
-    getParents,
-    getHouseParents
+    getParents
 } = require('../controllers');
 
 router.get('/livesearch', liveSearch);
@@ -18,11 +15,8 @@ router.get('/search', search);
 router.get('/levels', getLevels);
 router.get('/object', getObject);
 router.get('/children', getChildren);
-router.get('/housechildren', getHouseChildren);
-router.get('/rooms', getRooms);
 router.get('/params', getParams);
 router.get('/geometry', getGeometry);
 router.get('/parents', getParents);
-router.get('/houseparents', getHouseParents);
 
 module.exports = router;

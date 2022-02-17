@@ -84,44 +84,25 @@ function getObject(req, res) {
 }
 
 function getChildren(req, res) {
+  const mode = req.query.mode.split('_')[0]
+  let tableName
+  if (req.query.level === '11') {
+    tableName = 'getrooms';
+  } else if (req.query.level === '10') {
+    tableName = 'gethousechildren'
+  } else {
+    tableName = `getchildren_${mode}`
+  }
   db.any('SELECT * FROM ${schema:name}.${table:name}(${objectid})',
     {
       objectid: req.query.objectid,
       schema: DB_SCHEMA,
-      table: req.query.mode === 'adm_div' ? 'getchildren_adm' : 'getchildren_mun'
+      table: tableName
     })
     .then((data) => {
       res.send({
         children: data
       })
-    })
-    .catch((error) => {
-      res.send({ error });
-    });
-}
-
-function getHouseChildren(req, res) {
-  db.any('SELECT * FROM ${schema:name}.gethousechildren(${objectid});',
-  {
-    objectid: req.query.objectid,
-    schema: DB_SCHEMA
-  })
-    .then((data) => {
-      res.send({children: data})
-    })
-    .catch((error) => {
-      res.send({ error });
-    });
-}
-
-function getRooms(req, res) {
-  db.any('SELECT * FROM ${schema:name}.getrooms(${objectid});',
-  {
-    objectid: req.query.objectid,
-    schema: DB_SCHEMA
-  })
-    .then((data) => {
-      res.send({children: data})
     })
     .catch((error) => {
       res.send({ error });
@@ -209,26 +190,33 @@ function getGeometry(req, res) {
 }
 
 function getParents(req, res) {
-  db.any('SELECT * FROM ${schema:name}.${table:name}(${objectid});',
-  {
-    objectid: req.query.objectid,
-    schema: DB_SCHEMA,
-    table: req.query.mode === 'adm_div' ? 'genealogy_adm' : 'genealogy_mun'
-  })
-    .then((data) => {
-      res.send(data)
-    })
-    .catch((error) => {
-      res.send({ error });
-    });
-}
+  const mode = req.query.mode.split('_')[0]
+  let object;
+  switch (req.query.level) {
+    case '17':
+      object = 'carplace_';
+      break;
+    case '12':
+      object = 'room_';
+      break;
+    case '11':
+      object = 'apartment_';
+      break;
+    case '10':
+      object = 'house_';
+      break;
+    case '9':
+      object = 'stead_';
+      break;
+    default:
+      object = ''
+  }
 
-function getHouseParents(req, res) {
   db.any('SELECT * FROM ${schema:name}.${table:name}(${objectid});',
   {
     objectid: req.query.objectid,
     schema: DB_SCHEMA,
-    table: req.query.mode === 'adm_div' ? 'house_genealogy_adm' : 'house_genealogy_mun'
+    table: `${object}genealogy_${mode}`
   })
     .then((data) => {
       res.send(data)
@@ -244,10 +232,7 @@ module.exports = {
   getLevels,
   getObject,
   getChildren,
-  getHouseChildren,
-  getRooms,
   getParams,
   getGeometry,
-  getParents,
-  getHouseParents
+  getParents
 };
